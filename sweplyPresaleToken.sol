@@ -192,11 +192,14 @@ contract Washly is Context, IERC20, IERC20Metadata, Ownable {
   uint256 private _totalSupply = 0;
 
   uint256 public sweplyPerEth;
+  uint256 public currentRound;
 
   string private _name = "Sweply presale";
   string private _symbol = "SWPLY_PR";
 
   mapping(address => bool) public isBlacklisted;
+
+  mapping(address => uint256) public addressToRound;
 
   bool public paused = true;
 
@@ -206,9 +209,7 @@ contract Washly is Context, IERC20, IERC20Metadata, Ownable {
    * The default value of {decimals} is 18. To select a different value for
    * {decimals} you should overload it.
    */
-  constructor() {
-    emit Transfer(address(0), owner(), _balances[owner()]);
-  }
+  constructor() {}
 
   function togglePaused() external onlyOwner {
     paused = !paused;
@@ -377,11 +378,14 @@ contract Washly is Context, IERC20, IERC20Metadata, Ownable {
     require(false, "sweply presale tokens are not transferable");
   }
 
-  function setPrice(uint256 _nextPrice) external onlyOwner {
+  function setPrice(uint256 _nextPrice, uint256 _currentRound) external onlyOwner {
     sweplyPerEth = _nextPrice;
+    currentRound = _currentRound;
   }
 
   function buyPresaleWithToken(uint256 _amount, address tokenAddress) external {
+    require(!paused, "Presale is paused");
+    require(addressToRound[msg.sender] == 0, "Presale already granted");
     uint256 prevTokenBalance = IERC20(tokenAddress).balanceOf(address(this));
     IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amount);
     uint256 amountReceived = IERC20(tokenAddress).balanceOf(address(this)).sub(prevTokenBalance);
@@ -399,53 +403,17 @@ contract Washly is Context, IERC20, IERC20Metadata, Ownable {
       address(this),
       block.timestamp
     );
-
+    addressToRound[msg.sender] = currentRound;
     uint256 ethReceived = address(this).balance.sub(prevEthBalance);
 
     _mint(msg.sender, ethReceived.mul(sweplyPerEth));
   }
 
-  function buyPresaleWithEth(uint256 _nextPrice) external payable {
+  function buyPresaleWithEth() external payable {
+    require(!paused, "Presale is paused");
+    require(addressToRound[msg.sender] == 0, "Presale already granted");
     _mint(msg.sender, msg.value.mul(sweplyPerEth));
-  }
-
-  /**
-   * @dev Moves `amount` of tokens from `from` to `to`.
-   *
-   * This internal function is equivalent to {transfer}, and can be used to
-   * e.g. implement automatic token fees, slashing mechanisms, etc.
-   *
-   * Emits a {Transfer} event.
-   *
-   * Requirements:
-   *
-   * - `from` cannot be the zero address.
-   * - `to` cannot be the zero address.
-   * - `from` must have a balance of at least `amount`.
-   */
-  function _erc20Transfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal virtual {
-    require(from != address(0), "ERC20: transfer from the zero address");
-    require(to != address(0), "ERC20: transfer to the zero address");
-    require(!isBlacklisted[from] && !isBlacklisted[to], "blacklisted account tx");
-
-    _beforeTokenTransfer(from, to, amount);
-
-    uint256 fromBalance = _balances[from];
-    require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
-    unchecked {
-      _balances[from] = fromBalance - amount;
-      // Overflow not possible: the sum of all balances is capped by totalSupply, and the sum is preserved by
-      // decrementing then incrementing.
-      _balances[to] += amount;
-    }
-
-    emit Transfer(from, to, amount);
-
-    _afterTokenTransfer(from, to, amount);
+    addressToRound[msg.sender] = currentRound;
   }
 
   /** @dev Creates `amount` tokens and assigns them to `account`, increasing
