@@ -178,7 +178,7 @@ contract Ownable is Context {
   }
 }
 
-contract Washly is Context, IERC20, IERC20Metadata, Ownable {
+contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
   using SafeMath for uint256;
 
   mapping(address => uint256) private _balances;
