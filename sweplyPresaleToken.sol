@@ -197,13 +197,9 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
   string private _name = "Sweply presale";
   string private _symbol = "SWPLY_PR";
 
-  mapping(address => bool) public isBlacklisted;
-
   mapping(address => uint256) public addressToRound;
 
   bool public paused = true;
-
-  address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
   /**
    * The default value of {decimals} is 18. To select a different value for
