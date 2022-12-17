@@ -183,23 +183,27 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
 
   mapping(address => uint256) private _balances;
 
-  IUniswapV2Router02 public immutable uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
-
   mapping(address => mapping(address => uint256)) private _allowances;
 
   uint256 internal constant ONE = 10**18;
 
   uint256 private _totalSupply = 0;
 
-  uint256 public sweplyPerEth;
+  uint256 public sweplyPerUsdc;
   uint256 public currentRound;
 
   string private _name = "Sweply presale";
   string private _symbol = "SWPLY_PR";
 
+  mapping(address => bool) public isBlacklisted;
+
   mapping(address => uint256) public addressToRound;
 
   bool public paused = true;
+
+  address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+
+  IERC20 USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
   /**
    * The default value of {decimals} is 18. To select a different value for
@@ -375,41 +379,17 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
   }
 
   function setPrice(uint256 _nextPrice, uint256 _currentRound) external onlyOwner {
-    sweplyPerEth = _nextPrice;
+    sweplyPerUsdc = _nextPrice;
     currentRound = _currentRound;
   }
 
-  function buyPresaleWithToken(uint256 _amount, address tokenAddress) external {
+  function buyPresaleTokens(uint256 _amount) external {
     require(!paused, "Presale is paused");
     require(addressToRound[msg.sender] == 0, "Presale already granted");
-    uint256 prevTokenBalance = IERC20(tokenAddress).balanceOf(address(this));
-    IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amount);
-    uint256 amountReceived = IERC20(tokenAddress).balanceOf(address(this)).sub(prevTokenBalance);
 
-    address[] memory path = new address[](2);
-    path[0] = tokenAddress;
-    path[1] = uniswapV2Router.WETH();
+    USDC.transferFrom(msg.sender, address(this), _amount);
 
-    IERC20(tokenAddress).approve(address(uniswapV2Router), amountReceived);
-    uint256 prevEthBalance = address(this).balance;
-    uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-      amountReceived,
-      0, // accept any amount of ETH
-      path,
-      address(this),
-      block.timestamp
-    );
-    addressToRound[msg.sender] = currentRound;
-    uint256 ethReceived = address(this).balance.sub(prevEthBalance);
-
-    _mint(msg.sender, ethReceived.mul(sweplyPerEth));
-  }
-
-  function buyPresaleWithEth() external payable {
-    require(!paused, "Presale is paused");
-    require(addressToRound[msg.sender] == 0, "Presale already granted");
-    _mint(msg.sender, msg.value.mul(sweplyPerEth));
-    addressToRound[msg.sender] = currentRound;
+    _mint(msg.sender, _amount.mul(sweplyPerUsdc));
   }
 
   /** @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -437,6 +417,8 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
   }
 
   /**
+    address spender,
+    uint256 amount
    * @dev Destroys `amount` tokens from `account`, reducing the
    * total supply.
    *
