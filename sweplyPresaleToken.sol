@@ -389,6 +389,7 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
 
     USDC.transferFrom(msg.sender, address(this), _amount);
 
+    addressToRound[msg.sender] = currentRound;
     _mint(msg.sender, _amount.mul(sweplyPerUsdc));
   }
 
