@@ -189,7 +189,7 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
 
   uint256 private _totalSupply = 0;
 
-  uint256 public sweplyPerUsdc;
+  uint256 public currentPriceMultipliedBy1000 = 45;
   uint256 public currentRound;
 
   string private _name = "Sweply presale";
@@ -203,7 +203,7 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
 
   address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
-  IERC20 USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+  IERC20 USDC = IERC20(0x4Fbe90bb80457C1030870700ef0EB2fcEeBE268b);
 
   /**
    * The default value of {decimals} is 18. To select a different value for
@@ -379,7 +379,7 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
   }
 
   function setPrice(uint256 _nextPrice, uint256 _currentRound) external onlyOwner {
-    sweplyPerUsdc = _nextPrice;
+    currentPriceMultipliedBy1000 = _nextPrice;
     currentRound = _currentRound;
   }
 
@@ -387,10 +387,10 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
     require(!paused, "Presale is paused");
     require(addressToRound[msg.sender] == 0, "Presale already granted");
 
-    USDC.transferFrom(msg.sender, address(this), _amount);
+    USDC.transferFrom(msg.sender, address(this), (currentPriceMultipliedBy1000.mul(_amount).div(1000)).div(10**12));
 
     addressToRound[msg.sender] = currentRound;
-    _mint(msg.sender, _amount.mul(sweplyPerUsdc));
+    _mint(msg.sender, _amount);
   }
 
   /** @dev Creates `amount` tokens and assigns them to `account`, increasing
