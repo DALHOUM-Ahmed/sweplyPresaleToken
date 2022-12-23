@@ -203,7 +203,7 @@ contract sweplyPresale is Context, IERC20, IERC20Metadata, Ownable {
 
   address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
-  IERC20 USDC = IERC20(0x4Fbe90bb80457C1030870700ef0EB2fcEeBE268b);
+  IERC20 USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
 
   /**
    * The default value of {decimals} is 18. To select a different value for
